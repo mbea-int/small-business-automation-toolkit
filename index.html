@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Small Business Automation Toolkit — 5 Python Scripts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & tokens ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:   #07081A;
+  --navy2:  #0D0F2B;
+  --card:   #111328;
+  --border: #1E2140;
+  --violet: #6C63FF;
+  --violet2:#9089FF;
+  --mint:   #00D4AA;
+  --gold:   #FFB800;
+  --white:  #F0F2FF;
+  --muted:  #7C82A8;
+  --text:   #CBD0F0;
+  --r:      12px;
+  --r2:     20px;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--navy);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+
+/* ── Typography ─────────────────────────────────────────────── */
+h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;color:var(--white);line-height:1.15}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ── Noise texture overlay ──────────────────────────────────── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.4;
+}
+
+/* ── Glow blobs ─────────────────────────────────────────────── */
+.blob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+
+/* ── Layout helpers ─────────────────────────────────────────── */
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+.section{padding:100px 0;position:relative}
+
+/* ── Eyebrow label ──────────────────────────────────────────── */
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;font-weight:500;
+  color:var(--mint);letter-spacing:.12em;text-transform:uppercase;
+  background:rgba(0,212,170,.08);
+  border:1px solid rgba(0,212,170,.2);
+  padding:6px 14px;border-radius:99px;
+  margin-bottom:24px;
+}
+.eyebrow::before{content:'▶';font-size:8px}
+
+/* ══════════════════════════════════════════════════════════════
+   NAV
+══════════════════════════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(7,8,26,.8);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid transparent;
+  transition:border-color .3s;
+}
+nav.scrolled{border-bottom-color:var(--border)}
+.nav-logo{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;font-size:15px;color:var(--white);
+  display:flex;align-items:center;gap:8px;
+}
+.nav-logo-dot{width:8px;height:8px;border-radius:50%;background:var(--violet);box-shadow:0 0 10px var(--violet)}
+.nav-cta{
+  background:var(--violet);color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;font-weight:600;
+  padding:10px 22px;border-radius:var(--r);
+  text-decoration:none;border:none;cursor:pointer;
+  transition:background .2s,transform .15s,box-shadow .2s;
+  box-shadow:0 0 20px rgba(108,99,255,.35);
+}
+.nav-cta:hover{background:var(--violet2);transform:translateY(-1px);box-shadow:0 0 30px rgba(108,99,255,.5)}
+
+/* ══════════════════════════════════════════════════════════════
+   HERO
+══════════════════════════════════════════════════════════════ */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding-top:90px;position:relative;overflow:hidden;
+}
+.hero-blob1{width:600px;height:600px;background:rgba(108,99,255,.18);top:-200px;right:-200px}
+.hero-blob2{width:400px;height:400px;background:rgba(0,212,170,.1);bottom:-100px;left:-100px}
+
+.hero-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:60px;align-items:center;
+  width:100%;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--gold);letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);
+  padding:5px 12px;border-radius:99px;margin-bottom:20px;
+}
+.hero-badge::before{content:'★';font-size:10px}
+.hero h1{
+  font-size:clamp(38px,5vw,62px);
+  font-weight:700;line-height:1.08;
+  margin-bottom:20px;
+  letter-spacing:-.02em;
+}
+.hero h1 .accent{
+  background:linear-gradient(135deg,var(--violet),var(--mint));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{
+  font-size:18px;color:var(--muted);line-height:1.6;
+  margin-bottom:36px;max-width:480px;
+}
+.hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:40px}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--violet);color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;font-weight:600;
+  padding:16px 32px;border-radius:var(--r);
+  text-decoration:none;border:none;cursor:pointer;
+  transition:all .2s;
+  box-shadow:0 0 30px rgba(108,99,255,.4);
+}
+.btn-primary:hover{background:var(--violet2);transform:translateY(-2px);box-shadow:0 0 45px rgba(108,99,255,.55)}
+.btn-primary svg{width:18px;height:18px;flex-shrink:0}
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;color:var(--white);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;font-weight:500;
+  padding:16px 28px;border-radius:var(--r);
+  text-decoration:none;border:1px solid var(--border);cursor:pointer;
+  transition:all .2s;
+}
+.btn-secondary:hover{border-color:var(--violet);color:var(--violet2)}
+
+.hero-stats{display:flex;gap:32px;flex-wrap:wrap}
+.hero-stat{}
+.hero-stat-num{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:26px;font-weight:700;color:var(--white);
+}
+.hero-stat-label{font-size:12px;color:var(--muted)}
+
+/* Terminal window ─────────────────────────────────────────── */
+.terminal{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);overflow:hidden;
+  box-shadow:0 40px 80px rgba(0,0,0,.6),0 0 0 1px rgba(108,99,255,.1);
+}
+.terminal-bar{
+  background:rgba(255,255,255,.04);
+  padding:12px 16px;
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.t-dot{width:10px;height:10px;border-radius:50%}
+.t-dot-r{background:#FF5F57}
+.t-dot-y{background:#FFBD2E}
+.t-dot-g{background:#28CA41}
+.terminal-title{
+  flex:1;text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--muted);
+}
+.terminal-body{padding:20px 20px 24px;min-height:280px}
+.t-line{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;line-height:1.8;
+  display:block;
+  opacity:0;transform:translateY(4px);
+  transition:opacity .3s,transform .3s;
+}
+.t-line.show{opacity:1;transform:translateY(0)}
+.t-prompt{color:var(--mint)}
+.t-cmd{color:var(--white)}
+.t-comment{color:var(--muted)}
+.t-success{color:var(--mint)}
+.t-warn{color:var(--gold)}
+.t-violet{color:var(--violet2)}
+.t-cursor{
+  display:inline-block;width:8px;height:14px;
+  background:var(--mint);margin-left:2px;
+  animation:blink 1s step-end infinite;vertical-align:middle;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ══════════════════════════════════════════════════════════════
+   PROBLEM STRIP
+══════════════════════════════════════════════════════════════ */
+.problem-strip{
+  background:var(--navy2);
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:48px 0;
+}
+.problem-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:32px;
+}
+.problem-item{
+  display:flex;gap:14px;align-items:flex-start;
+}
+.problem-icon{
+  width:40px;height:40px;flex-shrink:0;
+  border-radius:10px;
+  background:rgba(255,90,90,.08);
+  border:1px solid rgba(255,90,90,.15);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+}
+.problem-text{font-size:14px;color:var(--muted);line-height:1.5}
+.problem-text strong{display:block;color:var(--white);margin-bottom:2px;font-family:'Space Grotesk',sans-serif}
+
+/* ══════════════════════════════════════════════════════════════
+   SCRIPTS SECTION
+══════════════════════════════════════════════════════════════ */
+.scripts-grid{
+  display:grid;grid-template-columns:1fr;
+  gap:16px;margin-top:56px;
+}
+.script-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  padding:28px 32px;
+  display:grid;grid-template-columns:auto 1fr auto;
+  gap:24px;align-items:center;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
+  position:relative;overflow:hidden;
+  cursor:default;
+}
+.script-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(108,99,255,.06),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.script-card:hover{
+  border-color:rgba(108,99,255,.4);
+  transform:translateX(4px);
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+.script-card:hover::before{opacity:1}
+.script-num{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;font-weight:500;
+  color:var(--violet);
+  background:rgba(108,99,255,.1);
+  border:1px solid rgba(108,99,255,.2);
+  padding:6px 12px;border-radius:8px;
+  white-space:nowrap;
+}
+.script-icon-wrap{
+  width:48px;height:48px;flex-shrink:0;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+}
+.script-body{}
+.script-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:17px;font-weight:600;color:var(--white);
+  margin-bottom:5px;
+}
+.script-desc{font-size:14px;color:var(--muted);line-height:1.5}
+.script-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.script-tag{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--mint);
+  background:rgba(0,212,170,.08);
+  border:1px solid rgba(0,212,170,.15);
+  padding:3px 9px;border-radius:99px;
+}
+.script-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;color:var(--gold);
+  background:rgba(255,184,0,.08);
+  border:1px solid rgba(255,184,0,.15);
+  padding:6px 12px;border-radius:8px;
+  white-space:nowrap;text-align:center;
+}
+.script-time span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+
+/* bonus card */
+.bonus-card{
+  background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(0,212,170,.08));
+  border:1px solid rgba(108,99,255,.3);
+  border-radius:var(--r2);
+  padding:28px 32px;
+  display:flex;align-items:center;gap:24px;
+  margin-top:16px;
+}
+.bonus-icon{font-size:36px;flex-shrink:0}
+.bonus-label{
+  font-size:11px;font-family:'JetBrains Mono',monospace;
+  color:var(--gold);letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:4px;
+}
+.bonus-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:17px;font-weight:600;color:var(--white);
+  margin-bottom:4px;
+}
+.bonus-desc{font-size:14px;color:var(--muted)}
+
+/* ══════════════════════════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════════════════════════ */
+.how-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:24px;margin-top:56px;
+}
+.how-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r2);padding:32px 28px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.how-card:hover{border-color:rgba(0,212,170,.3)}
+.how-card::after{
+  content:attr(data-n);
+  position:absolute;right:-10px;bottom:-20px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:100px;font-weight:700;
+  color:rgba(255,255,255,.025);
+  line-height:1;pointer-events:none;
+}
+.how-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:20px;
+}
+.how-icon-v{background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.2)}
+.how-icon-m{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.18)}
+.how-icon-g{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.18)}
+.how-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:17px;font-weight:600;color:var(--white);margin-bottom:8px;
+}
+.how-desc{font-size:14px;color:var(--muted);line-height:1.6}
+
+/* ══════════════════════════════════════════════════════════════
+   PERFECT FOR
+══════════════════════════════════════════════════════════════ */
+.for-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px;margin-top:48px;
+}
+.for-chip{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;
+  display:flex;gap:12px;align-items:flex-start;
+  transition:border-color .2s,background .2s;
+}
+.for-chip:hover{border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.05)}
+.for-emoji{font-size:22px;flex-shrink:0;line-height:1.3}
+.for-label{font-size:13px;font-weight:500;color:var(--white);font-family:'Space Grotesk',sans-serif;line-height:1.4}
+
+/* ══════════════════════════════════════════════════════════════
+   PRICING
+══════════════════════════════════════════════════════════════ */
+.pricing-wrap{
+  max-width:520px;margin:56px auto 0;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r2);
+  overflow:hidden;
+  position:relative;
+}
+.pricing-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(108,99,255,.2),transparent 70%);
+  pointer-events:none;
+}
+.pricing-top{
+  background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(0,212,170,.06));
+  padding:36px 40px 28px;
+  border-bottom:1px solid var(--border);
+  text-align:center;
+}
+.pricing-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--mint);letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.pricing-price{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:72px;font-weight:700;color:var(--white);
+  line-height:1;margin-bottom:4px;
+}
+.pricing-price sup{font-size:32px;vertical-align:super;font-weight:500}
+.pricing-per{font-size:14px;color:var(--muted);margin-bottom:16px}
+.pricing-savings{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.2);
+  color:var(--gold);font-size:13px;font-weight:500;
+  padding:5px 14px;border-radius:99px;
+  font-family:'Space Grotesk',sans-serif;
+}
+.pricing-items{padding:28px 40px}
+.pricing-item{
+  display:flex;align-items:center;gap:12px;
+  padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:14px;color:var(--text);
+}
+.pricing-item:last-child{border-bottom:none}
+.pi-check{
+  width:20px;height:20px;border-radius:50%;
+  background:rgba(0,212,170,.15);
+  border:1px solid rgba(0,212,170,.25);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:10px;color:var(--mint);
+}
+.pricing-btn{
+  display:block;width:calc(100% - 80px);
+  margin:0 40px 32px;
+  background:var(--violet);color:#fff;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;font-weight:700;
+  padding:18px;border-radius:var(--r);
+  text-decoration:none;border:none;cursor:pointer;
+  text-align:center;
+  transition:all .2s;
+  box-shadow:0 0 30px rgba(108,99,255,.4);
+  letter-spacing:.01em;
+}
+.pricing-btn:hover{background:var(--violet2);transform:translateY(-2px);box-shadow:0 0 50px rgba(108,99,255,.55)}
+.pricing-guarantee{
+  text-align:center;padding:0 40px 28px;
+  font-size:13px;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FAQ
+══════════════════════════════════════════════════════════════ */
+.faq-list{margin-top:48px;max-width:720px;margin-left:auto;margin-right:auto}
+.faq-item{
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+.faq-q{
+  width:100%;background:none;border:none;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:22px 0;cursor:pointer;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;font-weight:500;color:var(--white);
+  text-align:left;transition:color .2s;
+}
+.faq-q:hover{color:var(--violet2)}
+.faq-icon{
+  width:28px;height:28px;border-radius:50%;
+  background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:transform .25s,background .2s;
+  font-size:14px;color:var(--violet);
+}
+.faq-item.open .faq-icon{transform:rotate(45deg);background:rgba(108,99,255,.2)}
+.faq-a{
+  max-height:0;overflow:hidden;
+  font-size:15px;color:var(--muted);line-height:1.7;
+  transition:max-height .35s ease,padding .35s ease;
+}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:20px}
+
+/* ══════════════════════════════════════════════════════════════
+   FOOTER CTA
+══════════════════════════════════════════════════════════════ */
+.footer-cta{
+  background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(0,212,170,.06));
+  border-top:1px solid var(--border);
+  padding:80px 0;text-align:center;
+}
+.footer-cta h2{font-size:clamp(28px,4vw,46px);margin-bottom:16px}
+.footer-cta p{font-size:18px;color:var(--muted);margin-bottom:36px;max-width:520px;margin-left:auto;margin-right:auto}
+
+footer{
+  background:var(--navy2);border-top:1px solid var(--border);
+  padding:28px 24px;text-align:center;
+  font-size:13px;color:var(--muted);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLL REVEAL
+══════════════════════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════════ */
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;gap:40px}
+  .hero-terminal{order:-1}
+  .how-grid{grid-template-columns:1fr}
+  .script-card{grid-template-columns:auto 1fr;gap:16px}
+  .script-time{display:none}
+}
+@media(max-width:600px){
+  .section{padding:64px 0}
+  .script-card{padding:20px}
+  .pricing-top,.pricing-items{padding-left:24px;padding-right:24px}
+  .pricing-btn{width:calc(100% - 48px);margin-left:24px;margin-right:24px}
+  .pricing-guarantee{padding-left:24px;padding-right:24px}
+  nav{padding:12px 16px}
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important}
+  .reveal{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav" role="navigation" aria-label="Main navigation">
+  <div class="nav-logo">
+    <div class="nav-logo-dot" aria-hidden="true"></div>
+    SmallBiz Toolkit
+  </div>
+  <a class="nav-cta" data-gumroad-action="buy" aria-label="Buy the toolkit now">
+    Get the Toolkit — <span data-gumroad-field="price">$37</span>
+  </a>
+</nav>
+
+<!-- ══ HERO ══════════════════════════════════════════════════ -->
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="blob blob hero-blob1" aria-hidden="true"></div>
+  <div class="blob blob hero-blob2" aria-hidden="true"></div>
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left copy -->
+      <div class="hero-copy">
+        <div class="hero-badge" aria-label="5 ready-to-run Python scripts">5 ready-to-run Python scripts</div>
+        <h1 id="hero-heading">
+          Stop doing<br>
+          it <span class="accent">manually.</span>
+        </h1>
+        <p class="hero-sub">
+          Rename 1,000 files. Clean your spreadsheets. Generate invoices. 
+          Organize your folders. All automated — no coding required to run.
+        </p>
+        <div class="hero-ctas">
+          <a class="btn-primary" data-gumroad-action="buy" aria-label="Buy now">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            Get instant access
+          </a>
+          <a class="btn-secondary" href="#scripts" aria-label="See what's included">
+            See what's inside ↓
+          </a>
+        </div>
+        <div class="hero-stats" role="list" aria-label="Product highlights">
+          <div class="hero-stat" role="listitem">
+            <div class="hero-stat-num">5</div>
+            <div class="hero-stat-label">Python scripts</div>
+          </div>
+          <div class="hero-stat" role="listitem">
+            <div class="hero-stat-num">2 min</div>
+            <div class="hero-stat-label">Setup time</div>
+          </div>
+          <div class="hero-stat" role="listitem">
+            <div class="hero-stat-num">0</div>
+            <div class="hero-stat-label">Code skills needed</div>
+          </div>
+          <div class="hero-stat" role="listitem">
+            <div class="hero-stat-num">∞</div>
+            <div class="hero-stat-label">Times you can run it</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right terminal -->
+      <div class="hero-terminal" aria-label="Live terminal demo" aria-live="polite">
+        <div class="terminal">
+          <div class="terminal-bar" aria-hidden="true">
+            <div class="t-dot t-dot-r"></div>
+            <div class="t-dot t-dot-y"></div>
+            <div class="t-dot t-dot-g"></div>
+            <div class="terminal-title">automation_toolkit.py</div>
+          </div>
+          <div class="terminal-body" id="terminal-body">
+            <span class="t-line mono"><span class="t-prompt">$ </span><span class="t-cmd">python 1_bulk_file_renamer.py</span></span>
+            <span class="t-line mono"><span class="t-comment"># Found 1,000 files in: /Photos</span></span>
+            <span class="t-line mono"><span class="t-success">✅ IMG_4521.jpg  →  Product_001.jpg</span></span>
+            <span class="t-line mono"><span class="t-success">✅ IMG_4522.jpg  →  Product_002.jpg</span></span>
+            <span class="t-line mono"><span class="t-success">✅ IMG_4523.jpg  →  Product_003.jpg</span></span>
+            <span class="t-line mono"><span class="t-comment">  ... 995 more files</span></span>
+            <span class="t-line mono"><span class="t-warn">🎉 Done! 1,000 files renamed in 2.3 seconds.</span></span>
+            <span class="t-line mono">&nbsp;</span>
+            <span class="t-line mono"><span class="t-prompt">$ </span><span class="t-cmd">python 2_spreadsheet_cleaner.py</span></span>
+            <span class="t-line mono"><span class="t-success">✅ Removed 47 blank rows</span></span>
+            <span class="t-line mono"><span class="t-success">✅ Removed 12 duplicate entries</span></span>
+            <span class="t-line mono"><span class="t-warn">🎉 Clean file saved: orders_CLEAN.xlsx</span></span>
+            <span class="t-line mono">&nbsp;</span>
+            <span class="t-line mono"><span class="t-prompt">$ </span><span class="t-cmd">python 3_invoice_generator.py</span></span>
+            <span class="t-line mono"><span class="t-violet">  ✅ INV-001.pdf  →  Acme Shop ($400.00)</span></span>
+            <span class="t-line mono"><span class="t-violet">  ✅ INV-002.pdf  →  Studio Bloom ($250.00)</span></span>
+            <span class="t-line mono"><span class="t-warn">🎉 3 invoices generated in 1.1 seconds.</span></span>
+            <span class="t-line mono"><span class="t-cursor" aria-hidden="true"></span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ PROBLEM STRIP ══════════════════════════════════════════ -->
+<div class="problem-strip" aria-label="Common problems this solves">
+  <div class="container">
+    <div class="problem-grid">
+      <div class="problem-item">
+        <div class="problem-icon" aria-hidden="true">⏱️</div>
+        <div class="problem-text">
+          <strong>Hours wasted every week</strong>
+          Renaming files, fixing spreadsheets, making invoices — manually, every time.
+        </div>
+      </div>
+      <div class="problem-item">
+        <div class="problem-icon" aria-hidden="true">😤</div>
+        <div class="problem-text">
+          <strong>Repetitive and error-prone</strong>
+          One wrong click and you've broken your folder, your data, your invoice.
+        </div>
+      </div>
+      <div class="problem-item">
+        <div class="problem-icon" aria-hidden="true">💸</div>
+        <div class="problem-text">
+          <strong>Too expensive to outsource</strong>
+          Hiring someone to clean data or generate invoices eats into margins fast.
+        </div>
+      </div>
+      <div class="problem-item">
+        <div class="problem-icon" aria-hidden="true">🤯</div>
+        <div class="problem-text">
+          <strong>Learning Python takes months</strong>
+          You don't have time. You need the automation to work today, not eventually.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCRIPTS ════════════════════════════════════════════════ -->
+<section class="section" id="scripts" aria-labelledby="scripts-heading">
+  <div class="container">
+    <div class="eyebrow" aria-label="What's inside">What's inside</div>
+    <h2 id="scripts-heading">Five scripts. Five problems solved.</h2>
+    <p style="color:var(--muted);font-size:18px;margin-top:12px;max-width:560px">
+      Each script handles one painful task from start to finish. Run it once, or run it every day — it never gets tired.
+    </p>
+
+    <div class="scripts-grid" role="list">
+
+      <article class="script-card reveal" role="listitem" aria-label="Script 1: Bulk File Renamer">
+        <div class="script-num mono">01</div>
+        <div class="script-body">
+          <div class="script-title">Bulk File Renamer</div>
+          <div class="script-desc">Rename an entire folder of files in seconds — your prefix, your numbering, your format. Works on photos, documents, invoices, anything.</div>
+          <div class="script-tags">
+            <span class="script-tag">1,000 files</span>
+            <span class="script-tag">2 seconds</span>
+            <span class="script-tag">any extension</span>
+          </div>
+        </div>
+        <div class="script-time">2 sec<span>per 1,000 files</span></div>
+      </article>
+
+      <article class="script-card reveal reveal-delay-1" role="listitem" aria-label="Script 2: Spreadsheet Cleaner">
+        <div class="script-num mono">02</div>
+        <div class="script-body">
+          <div class="script-title">Spreadsheet Cleaner</div>
+          <div class="script-desc">Drop in your messy Excel or CSV. It removes blank rows, fixes formatting, kills duplicates, and saves a clean copy — original untouched.</div>
+          <div class="script-tags">
+            <span class="script-tag">Excel & CSV</span>
+            <span class="script-tag">auto-dedup</span>
+            <span class="script-tag">safe copy</span>
+          </div>
+        </div>
+        <div class="script-time">5 sec<span>per any file</span></div>
+      </article>
+
+      <article class="script-card reveal reveal-delay-2" role="listitem" aria-label="Script 3: Invoice Generator">
+        <div class="script-num mono">03</div>
+        <div class="script-body">
+          <div class="script-title">Invoice Generator</div>
+          <div class="script-desc">Add your clients and line items once. Generate beautiful, branded PDF invoices for all of them in seconds — consistently, every time.</div>
+          <div class="script-tags">
+            <span class="script-tag">PDF output</span>
+            <span class="script-tag">multi-client</span>
+            <span class="script-tag">branded</span>
+          </div>
+        </div>
+        <div class="script-time">1 sec<span>per invoice</span></div>
+      </article>
+
+      <article class="script-card reveal" role="listitem" aria-label="Script 4: Email List Cleaner">
+        <div class="script-num mono">04</div>
+        <div class="script-body">
+          <div class="script-title">Email List Cleaner</div>
+          <div class="script-desc">Validates every email, removes duplicates, standardizes formatting, and exports a clean list ready to import into Mailchimp or ConvertKit.</div>
+          <div class="script-tags">
+            <span class="script-tag">validates format</span>
+            <span class="script-tag">deduplicates</span>
+            <span class="script-tag">CSV export</span>
+          </div>
+        </div>
+        <div class="script-time">10 sec<span>per 10k emails</span></div>
+      </article>
+
+      <article class="script-card reveal reveal-delay-1" role="listitem" aria-label="Script 5: Folder Auto-Organizer">
+        <div class="script-num mono">05</div>
+        <div class="script-body">
+          <div class="script-title">Folder Auto-Organizer</div>
+          <div class="script-desc">Points at any messy folder and sorts every file into tidy subfolders by type: Images, Documents, Spreadsheets, Videos, Code, and more.</div>
+          <div class="script-tags">
+            <span class="script-tag">dry-run preview</span>
+            <span class="script-tag">9 categories</span>
+            <span class="script-tag">non-destructive</span>
+          </div>
+        </div>
+        <div class="script-time">5 sec<span>per 500 files</span></div>
+      </article>
+
+      <!-- Bonus -->
+      <div class="bonus-card reveal" role="note" aria-label="Bonus included">
+        <div class="bonus-icon" aria-hidden="true">🎁</div>
+        <div>
+          <div class="bonus-label">Bonus included</div>
+          <div class="bonus-title">Full PDF Setup Guide</div>
+          <div class="bonus-desc">Screenshots, step-by-step instructions, and troubleshooting. Every script explained so anyone on your team can run it — no Python knowledge needed.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ═══════════════════════════════════════════ -->
+<section class="section" style="background:var(--navy2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" aria-labelledby="how-heading">
+  <div class="container">
+    <div class="eyebrow">How it works</div>
+    <h2 id="how-heading">Up and running in 5 minutes.</h2>
+    <div class="how-grid">
+      <div class="how-card reveal" data-n="1">
+        <div class="how-icon how-icon-v" aria-hidden="true">⬇️</div>
+        <div class="how-title">Download & install Python</div>
+        <div class="how-desc">Python is free at python.org. Takes 2 minutes to install. You only do this once — every script uses it forever.</div>
+      </div>
+      <div class="how-card reveal reveal-delay-1" data-n="2">
+        <div class="how-icon how-icon-m" aria-hidden="true">✏️</div>
+        <div class="how-title">Edit 2 lines of settings</div>
+        <div class="how-desc">Open the script in Notepad. Change the folder path and your prefix. Every setting is clearly labeled — no coding, just filling in blanks.</div>
+      </div>
+      <div class="how-card reveal reveal-delay-2" data-n="3">
+        <div class="how-icon how-icon-g" aria-hidden="true">▶️</div>
+        <div class="how-title">Double-click and watch it run</div>
+        <div class="how-desc">A terminal window shows live progress. It closes when done. Run it once, run it daily — it works exactly the same every time.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PERFECT FOR ════════════════════════════════════════════ -->
+<section class="section" aria-labelledby="for-heading">
+  <div class="container">
+    <div class="eyebrow">Who it's for</div>
+    <h2 id="for-heading">Built for people who work, not developers.</h2>
+    <div class="for-grid" role="list">
+      <div class="for-chip reveal" role="listitem"><div class="for-emoji" aria-hidden="true">🛍️</div><div class="for-label">Etsy &amp; Shopify sellers</div></div>
+      <div class="for-chip reveal reveal-delay-1" role="listitem"><div class="for-emoji" aria-hidden="true">💼</div><div class="for-label">Freelancers &amp; consultants</div></div>
+      <div class="for-chip reveal reveal-delay-2" role="listitem"><div class="for-emoji" aria-hidden="true">🧘</div><div class="for-label">Coaches &amp; therapists</div></div>
+      <div class="for-chip reveal" role="listitem"><div class="for-emoji" aria-hidden="true">💻</div><div class="for-label">Virtual assistants</div></div>
+      <div class="for-chip reveal reveal-delay-1" role="listitem"><div class="for-emoji" aria-hidden="true">📦</div><div class="for-label">Small e-commerce stores</div></div>
+      <div class="for-chip reveal reveal-delay-2" role="listitem"><div class="for-emoji" aria-hidden="true">🏢</div><div class="for-label">Solo entrepreneurs</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PRICING ════════════════════════════════════════════════ -->
+<section class="section" style="background:var(--navy2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)" id="pricing" aria-labelledby="pricing-heading">
+  <div class="container">
+    <div style="text-align:center">
+      <div class="eyebrow" style="margin:0 auto 24px">Pricing</div>
+      <h2 id="pricing-heading">One price. Everything included.</h2>
+      <p style="color:var(--muted);font-size:18px;margin-top:12px">No subscription. No upsells. Instant download.</p>
+    </div>
+    <div class="pricing-wrap">
+      <div class="pricing-glow" aria-hidden="true"></div>
+      <div class="pricing-top">
+        <div class="pricing-label">Complete Toolkit</div>
+        <div class="pricing-price" aria-label="Price: 37 dollars"><sup>$</sup><span data-gumroad-field="price">37</span></div>
+        <div class="pricing-per">one-time payment · instant download</div>
+        <div class="pricing-savings" aria-label="Save hours every week">⚡ Saves 10+ hours every week</div>
+      </div>
+      <div class="pricing-items" role="list">
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>5 Python automation scripts</div>
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>Full PDF setup guide with screenshots</div>
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>Works on Windows &amp; Mac</div>
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>No coding knowledge to use</div>
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>Run unlimited times, forever</div>
+        <div class="pricing-item" role="listitem"><div class="pi-check" aria-hidden="true">✓</div>Commercial use license included</div>
+      </div>
+      <a class="pricing-btn" data-gumroad-action="buy" aria-label="Buy the Small Business Automation Toolkit now">
+        Get the Toolkit Now →
+      </a>
+      <div class="pricing-guarantee" aria-label="Satisfaction guaranteed">
+        <span aria-hidden="true">🔒</span> Secure checkout · Instant delivery
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FAQ ════════════════════════════════════════════════════ -->
+<section class="section" aria-labelledby="faq-heading">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:0">
+      <div class="eyebrow" style="margin:0 auto 24px">FAQ</div>
+      <h2 id="faq-heading">Answers to what you're wondering.</h2>
+    </div>
+    <div class="faq-list" role="list">
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-1">
+          Do I need to know Python to use this?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-1" role="region">
+          Not at all. Each script is set up so you only edit 2–3 clearly labeled lines (like your folder path or your name), then double-click to run. The PDF guide walks through every step with screenshots.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-2">
+          Does it work on Windows and Mac?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-2" role="region">
+          Yes. Every script is cross-platform. Python itself is free and available for both Windows and Mac — installation takes about 2 minutes.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-3">
+          Will it overwrite or delete my original files?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-3" role="region">
+          Never. Every script saves a new clean copy or works on the renamed files directly — your originals stay untouched. The Folder Organizer even has a "dry run" preview mode so you can see what would happen before anything moves.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-4">
+          How do I receive the files after purchase?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-4" role="region">
+          Instantly. Gumroad sends a download link to your email the moment your payment goes through. You get a ZIP file with all 5 scripts and the PDF guide inside.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-5">
+          Can I use these scripts for client work?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-5" role="region">
+          Yes. A commercial use license is included. Use them for your own business, your clients' businesses, or anything you're working on professionally.
+        </div>
+      </div>
+
+      <div class="faq-item" role="listitem">
+        <button class="faq-q" aria-expanded="false" aria-controls="faq-a-6">
+          What if something doesn't work on my computer?
+          <div class="faq-icon" aria-hidden="true">+</div>
+        </button>
+        <div class="faq-a" id="faq-a-6" role="region">
+          Message through Gumroad and I'll help you get it running. The guide covers the most common setup issues, and most problems are solved in one message.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER CTA ═════════════════════════════════════════════ -->
+<section class="footer-cta" aria-labelledby="footer-cta-heading">
+  <div class="container">
+    <div class="eyebrow" style="margin:0 auto 24px">Ready?</div>
+    <h2 id="footer-cta-heading">Stop doing it manually.</h2>
+    <p>Get all 5 scripts, the PDF guide, and start saving hours — today.</p>
+    <a class="btn-primary" data-gumroad-action="buy" style="font-size:17px;padding:18px 40px;display:inline-flex" aria-label="Buy the toolkit now">
+      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" style="width:20px;height:20px"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Get the Toolkit — <span data-gumroad-field="price" style="margin-left:4px">$37</span>
+    </a>
+    <p style="font-size:13px;color:var(--muted);margin-top:16px">Instant download · Works on Windows &amp; Mac · No coding required</p>
+  </div>
+</section>
+
+<footer role="contentinfo">
+  <div>Built for small business owners who have better things to do than manual tasks.</div>
+</footer>
+
+<script>
+// ── Nav scroll ─────────────────────────────────────────────
+var nav = document.getElementById('main-nav');
+window.addEventListener('scroll', function(){
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, {passive:true});
+
+// ── Terminal line reveal ───────────────────────────────────
+(function(){
+  var lines = document.querySelectorAll('.t-line');
+  var shown = false;
+  function revealLines(){
+    if(shown) return;
+    shown = true;
+    lines.forEach(function(l, i){
+      setTimeout(function(){ l.classList.add('show'); }, i * 90);
+    });
+  }
+  // Intersection observer for terminal
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting) revealLines(); });
+    }, {threshold:.2});
+    var term = document.querySelector('.terminal');
+    if(term) io.observe(term);
+  } else {
+    revealLines();
+  }
+})();
+
+// ── Scroll reveal ──────────────────────────────────────────
+(function(){
+  if(!('IntersectionObserver' in window)){
+    document.querySelectorAll('.reveal').forEach(function(el){
+      el.classList.add('visible');
+    });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:.15,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(function(el){ io.observe(el); });
+})();
+
+// ── FAQ accordion ─────────────────────────────────────────
+document.querySelectorAll('.faq-q').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var item = btn.closest('.faq-item');
+    var isOpen = item.classList.contains('open');
+    // close all
+    document.querySelectorAll('.faq-item').forEach(function(it){
+      it.classList.remove('open');
+      it.querySelector('.faq-q').setAttribute('aria-expanded','false');
+    });
+    if(!isOpen){
+      item.classList.add('open');
+      btn.setAttribute('aria-expanded','true');
+    }
+  });
+});
+</script>
+</body>
+</html>
